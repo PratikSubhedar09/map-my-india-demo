@@ -3,7 +3,7 @@ import axios from 'axios';
 import { Modal, Row, Col, Form, Button } from 'react-bootstrap';
 import { AsyncTypeahead as Typeahead } from 'react-bootstrap-typeahead';
 import 'react-bootstrap-typeahead/css/Typeahead.css';
-const mapMyIndUrl = 'http://digital-uat.dmart.in/api/v1/places?';
+const mapMyIndUrl = 'https://digital-uat.dmart.in/api/v1/places?';
 class App extends Component {
   state = {
     isLoading: false,
