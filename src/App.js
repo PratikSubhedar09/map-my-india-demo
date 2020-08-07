@@ -85,7 +85,7 @@ class App extends Component {
         town: addrTokens.city,
         area: addrTokens.locality,
         pincode: addrTokens.pincode,
-        // landmark: addrTokens.poi,
+        landmark: addrTokens.poi,
         addr1,
       });
     } else if (addr2.length === 0) {
@@ -95,7 +95,7 @@ class App extends Component {
         town: '',
         area: '',
         pincode: '',
-        // landmark: '',
+        landmark: '',
         addr1: '',
       });
     }
