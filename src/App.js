@@ -4,6 +4,7 @@ import { Modal, Row, Col, Form, Button } from 'react-bootstrap';
 import { AsyncTypeahead as Typeahead } from 'react-bootstrap-typeahead';
 import 'react-bootstrap-typeahead/css/Typeahead.css';
 const mapMyIndUrl = 'https://digital-uat.dmart.in/api/v1/places?';
+const pincodeSuggUrl = 'https://digital-uat.dmart.in/api/v1/pincodes/search/';
 class App extends Component {
   state = {
     isLoading: false,
@@ -20,7 +21,7 @@ class App extends Component {
   handlePincodeChange = ({ target: { value } }) => {
     this.setState({
       pincode: value,
-    })
+    }, () => this.fetchPincodeSuggestions(value))
   }
 
   handleLandmarkChange = ({ target: { value } }) => {
@@ -63,12 +64,28 @@ class App extends Component {
 
   fetchAddressSuggestions = async (input) => {
     const response = await axios.get(`${mapMyIndUrl}&pincode=${this.state.pincode}&place=${input}`).catch(err => console.log(err));
-    const addr1Suggestions = response && response.data && response.data.suggestedLocations;
+    const addr1Suggestions = (response && response.data && response.data.suggestedLocations) || [];
     if (addr1Suggestions && addr1Suggestions.length > 0) {
+      addr1Suggestions.forEach(sugg => {
+        sugg.completeAddr = `${sugg.placeName}, ${sugg.placeAddress}`;
+      });
+    }
+    this.setState({
+      addr1Suggestions,
+      isLoading: false,
+    })
+  }
+
+  fetchPincodeSuggestions = async (input) => {
+    if (input && input.length === 6) {
+      const response = await axios.get(`${pincodeSuggUrl}${input}?type=hd`).catch(err => console.log(err));
+      const pincodeDetails = response && response.data && response.data.StorePincodeDetails && response.data.StorePincodeDetails[0];
+      console.log('fetchPincodeSuggestions: ', input, ' response: ', pincodeDetails);
       this.setState({
-        addr1Suggestions,
-        isLoading: false,
-      })
+        state: pincodeDetails.State,
+        town: pincodeDetails.Region,
+        area: pincodeDetails.Area,
+      });
     }
   }
 
@@ -76,25 +93,26 @@ class App extends Component {
     const addrTokens = addr2[0] && addr2[0].addressTokens;
     console.log('addr2 addrTokens: ', addrTokens);
     if (addrTokens) {
-      const addr1 = (addrTokens.houseName || addrTokens.houseNumber) ?
-        addrTokens.houseNumber ? `${addrTokens.houseNumber}, ${addrTokens.houseName}` :
-        addrTokens.houseName : this.state.addr1;
+      // const addr1 = (addrTokens.houseName || addrTokens.houseNumber) ?
+      //   addrTokens.houseNumber ? `${addrTokens.houseNumber}, ${addrTokens.houseName}` :
+      //   addrTokens.houseName : this.state.addr1;
+      const addr1 = addrTokens.houseNumber;
       this.setState({
         addr2,
-        state: addrTokens.state,
-        town: addrTokens.city,
-        area: addrTokens.locality,
-        pincode: addrTokens.pincode,
+        // state: addrTokens.state,
+        // town: addrTokens.city,
+        // area: addrTokens.locality,
+        // pincode: addrTokens.pincode,
         landmark: addrTokens.poi,
         addr1,
       });
     } else if (addr2.length === 0) {
       this.setState({
         addr2: [],
-        state: '',
-        town: '',
-        area: '',
-        pincode: '',
+        // state: '',
+        // town: '',
+        // area: '',
+        // pincode: '',
         landmark: '',
         addr1: '',
       });
@@ -151,22 +169,22 @@ class App extends Component {
                 </Form.Group>
               </Col>
             </Row>
-            <Form.Group controlId="address1">
-              <Form.Label>Flat no. (floor, building, company)*</Form.Label>
-              <Form.Control type="text" value={this.state.addr1} onChange={this.handleAddrOneChange} />
-            </Form.Group>
             <Form.Group controlId="address2">
-              <Form.Label>Address ( locality, colony, street, sector )*</Form.Label>
+              <Form.Label>Address ( building, locality, colony, street, sector )*</Form.Label>
               <Typeahead
                 isLoading={this.state.isLoading}
                 id="address2"
-                labelKey="placeAddress"
+                labelKey="completeAddr"
                 filterBy={() => true}
                 onSearch={this.handleAddrTwoInputChange}
                 onChange={this.handleAddrTwoChange}
                 options={this.state.addr1Suggestions}
                 clearButton
               />
+            </Form.Group>
+            <Form.Group controlId="address1">
+              <Form.Label>Flat no. *</Form.Label>
+              <Form.Control type="text" value={this.state.addr1} onChange={this.handleAddrOneChange} />
             </Form.Group>
             <Form.Group controlId="landmark">
               <Form.Label>Landmark*</Form.Label>
